@@ -92,7 +92,9 @@ function analyticless_test_convergence(dts::AbstractArray,
                           alg,test_dt;trajectories=100,
                           save_everystep=true,timeseries_steps=1,
                           timeseries_errors=save_everystep,adaptive=false,
-                          weak_timeseries_errors=false,weak_dense_errors=false,use_noise_grid=true,kwargs...)
+                          weak_timeseries_errors=false,weak_dense_errors=false,use_noise_grid=true,
+                          use_KPW_scheme=false,
+                          kwargs...)
   _solutions = []
   tmp_solutions = Array{Any}(undef,trajectories,length(dts))
   for j in 1:trajectories
@@ -104,7 +106,13 @@ function analyticless_test_convergence(dts::AbstractArray,
         brownian_values2 = cumsum([[zeros(size(prob.u0))];[sqrt(test_dt)*randn(size(prob.u0)) for i in 1:length(t)-1]])
       else
         brownian_values = cumsum([[zeros(size(prob.noise_rate_prototype,2))];[sqrt(test_dt)*randn(size(prob.noise_rate_prototype,2)) for i in 1:length(t)-1]])
-        brownian_values2 = cumsum([[zeros(size(prob.noise_rate_prototype,2))];[sqrt(test_dt)*randn(size(prob.noise_rate_prototype,2)) for i in 1:length(t)-1]])
+        if !use_KPW_scheme
+          brownian_values2 = cumsum([[zeros(size(prob.noise_rate_prototype,2))];[sqrt(test_dt)*randn(size(prob.noise_rate_prototype,2)) for i in 1:length(t)-1]])
+        else
+          m = size(prob.noise_rate_prototype,2)
+          m2 =  m + alg.p*m*2
+          brownian_values2 = cumsum([[zeros(m2)];[sqrt(test_dt)*randn(m2) for i in 1:length(t)-1]])
+        end
       end
       np = NoiseGrid(t,brownian_values,brownian_values2)
 
